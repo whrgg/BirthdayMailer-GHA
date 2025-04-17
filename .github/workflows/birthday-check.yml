@@ -25,15 +25,23 @@ jobs:
         
     - name: Create config files
       run: |
-        # 使用 jq 验证并格式化 JSON
-        echo '${{ secrets.EMAIL_CONFIG }}' | jq '.' > email.json
-        echo '${{ secrets.BIRTHDAY_DATA }}' | jq '.' > birthday.json
+        # 直接写入配置文件
+        cat << EOF > email.json
+        {
+            "sender": {
+                "email": "${{ secrets.SENDER_EMAIL }}",
+                "password": "${{ secrets.EMAIL_PASSWORD }}",
+                "smtp_server": "smtp.qq.com",
+                "smtp_port": 465
+            },
+            "recipients": [
+                "${{ secrets.RECIPIENT_EMAIL }}"
+            ]
+        }
+        EOF
         
-        # 显示创建的文件内容（隐藏敏感信息）
-        echo "email.json structure:"
-        jq 'del(.sender.password)' email.json
-        echo "birthday.json structure:"
-        jq '.' birthday.json
+        # 写入生日数据
+        echo '${{ secrets.BIRTHDAY_DATA }}' > birthday.json
       
     - name: Run birthday check
       run: python check_birthdays.py 
