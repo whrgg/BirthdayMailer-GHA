@@ -18,8 +18,10 @@ def get_beijing_now() -> datetime:
 def get_today_lunar_date():
     # 获取今天的北京时间
     today = get_beijing_now()
+    # 转换为不带时区的 datetime
+    naive_today = datetime(today.year, today.month, today.day)
     # 转换为农历日期
-    lunar_date = ZhDate.from_datetime(today)
+    lunar_date = ZhDate.from_datetime(naive_today)
     return {
         'month': lunar_date.lunar_month,
         'day': lunar_date.lunar_day
