@@ -1,5 +1,6 @@
 import json
 import smtplib
+import socket
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
@@ -10,13 +11,17 @@ def get_today_lunar_date():
     today = datetime.now()
     # 转换为农历日期
     lunar_date = ZhDate.from_datetime(today)
-    return lunar_date
+    return {
+        'month': lunar_date.lunar_month,
+        'day': lunar_date.lunar_day
+    }
 
 def format_lunar_date(month, day):
     lunar_months = ["正", "二", "三", "四", "五", "六", "七", "八", "九", "十", "冬", "腊"]
     return f"农历{lunar_months[month-1]}月{day}日"
 
 def send_birthday_email(birthday_people, email_config):
+    server = None
     try:
         # 创建邮件内容
         msg = MIMEMultipart()
@@ -26,7 +31,7 @@ def send_birthday_email(birthday_people, email_config):
 
         # 获取今天的农历日期
         lunar_today = get_today_lunar_date()
-        lunar_date_str = format_lunar_date(lunar_today.month, lunar_today.day)
+        lunar_date_str = format_lunar_date(lunar_today['month'], lunar_today['day'])
 
         # 构建邮件正文
         body = f'今天是{lunar_date_str}，以下人员过农历生日：\n\n'
@@ -36,18 +41,27 @@ def send_birthday_email(birthday_people, email_config):
 
         msg.attach(MIMEText(body, 'plain', 'utf-8'))
 
-        # 连接SMTP服务器并发送邮件
-        with smtplib.SMTP(email_config['sender']['smtp_server'], 
-                         email_config['sender']['smtp_port']) as server:
-            server.starttls()
-            server.login(email_config['sender']['email'], 
-                        email_config['sender']['password'])
-            server.send_message(msg)
-        
+        # 使用SSL连接SMTP服务器并发送邮件
+        server = smtplib.SMTP_SSL(email_config['sender']['smtp_server'], 465, timeout=10)
+        server.login(email_config['sender']['email'], 
+                    email_config['sender']['password'])
+        server.send_message(msg)
         print('生日提醒邮件已发送成功！')
         
     except Exception as e:
         print(f'发送邮件时出错：{str(e)}')
+        print('请确保：')
+        print('1. QQ邮箱已开启SMTP服务')
+        print('2. 使用的是正确的授权码而不是QQ密码')
+        print('3. email.json中的配置信息正确')
+        raise
+    finally:
+        # 安全关闭连接
+        if server:
+            try:
+                server.quit()
+            except (socket.error, smtplib.SMTPServerDisconnected):
+                pass  # 忽略关闭连接时的错误
 
 def check_birthdays():
     try:
@@ -61,13 +75,13 @@ def check_birthdays():
         
         # 获取今天的农历日期
         lunar_today = get_today_lunar_date()
-        lunar_date_str = format_lunar_date(lunar_today.month, lunar_today.day)
+        lunar_date_str = format_lunar_date(lunar_today['month'], lunar_today['day'])
         
         # 检查今天是否有人过生日
         birthday_people = []
         for person in data['birthdays']:
             lunar_date = person['lunar_date']
-            if lunar_date['month'] == lunar_today.month and lunar_date['day'] == lunar_today.day:
+            if lunar_date['month'] == lunar_today['month'] and lunar_date['day'] == lunar_today['day']:
                 birthday_people.append(person['name'])
         
         # 输出结果

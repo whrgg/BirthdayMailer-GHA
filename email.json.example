@@ -1,12 +1,11 @@
 {
     "sender": {
-        "email": "your_email@example.com",
-        "password": "your_app_password",
-        "smtp_server": "smtp.example.com",
+        "email": "2186840198@qq.com",
+        "password": "tvgllwuvwkqgecic",
+        "smtp_server": "smtp.qq.com",
         "smtp_port": 587
     },
     "recipients": [
-        "recipient1@example.com",
-        "recipient2@example.com"
+        "2186480198@qq.com"
     ]
 } 
