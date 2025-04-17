@@ -5,6 +5,17 @@ birthdays_family.json
 birthdays_friends.json
 modules.json
 
+# 数据集文件夹
+家人数据集/
+朋友数据集/
+
+# 示例文件
+*.example
+*.example.*
+email_*.json.example
+birthdays_*.json.example
+modules.json.example
+
 # Python
 __pycache__/
 *.py[cod]

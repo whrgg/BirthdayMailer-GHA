@@ -21,6 +21,49 @@ def format_lunar_date(month, day):
     lunar_months = ["正", "二", "三", "四", "五", "六", "七", "八", "九", "十", "冬", "腊"]
     return f"农历{lunar_months[month-1]}月{day}日"
 
+def get_birthday_greeting(module_name: str, birthday_people: List[str], lunar_date_str: str) -> str:
+    """
+    根据不同模块生成不同的生日祝福语
+    """
+    if module_name == "family":
+        # 家人生日祝福
+        greeting = f'今天是{lunar_date_str}，我们亲爱的家人：\n\n'
+        for name in birthday_people:
+            greeting += f'- {name}\n'
+        greeting += '\n迎来了他们一年一度的生日'
+        greeting += '\n记得即时为他们送上祝福，让他们感受到我们全家人满满的爱意。'
+    
+    elif module_name == "friends":
+        # 朋友生日祝福
+        greeting = f'今天是{lunar_date_str}，我的好朋友：\n\n'
+        for name in birthday_people:
+            greeting += f'- {name}\n'
+        greeting += '\n的生日'
+        greeting += '\n记得送上你真挚的祝福！'
+        greeting += '\n祝我们的友谊长存'
+    
+    else:
+        # 默认祝福语
+        greeting = f'今天是{lunar_date_str}，以下人员过生日：\n\n'
+        for name in birthday_people:
+            greeting += f'- {name}\n'
+        greeting += '\n祝你们生日快乐！'
+    
+    return greeting
+
+def get_email_subject(module_name: str) -> str:
+    """
+    根据不同模块生成不同的邮件主题
+    """
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    
+    if module_name == "family":
+        return f'家人生日提醒 - {today_str}'
+    elif module_name == "friends":
+        return f'朋友生日提醒 - {today_str}'
+    else:
+        return f'{module_name}模块 - 生日提醒 - {today_str}'
+
 def send_birthday_email(birthday_people: List[str], email_config: Dict[str, Any], module_name: str):
     server = None
     try:
@@ -28,17 +71,14 @@ def send_birthday_email(birthday_people: List[str], email_config: Dict[str, Any]
         msg = MIMEMultipart()
         msg['From'] = email_config['sender']['email']
         msg['To'] = ', '.join(email_config['recipients'])
-        msg['Subject'] = f'{module_name}模块 - 农历生日提醒 - {datetime.now().strftime("%Y-%m-%d")}'
+        msg['Subject'] = get_email_subject(module_name)
 
         # 获取今天的农历日期
         lunar_today = get_today_lunar_date()
         lunar_date_str = format_lunar_date(lunar_today['month'], lunar_today['day'])
 
-        # 构建邮件正文
-        body = f'今天是{lunar_date_str}，{module_name}模块中以下人员过农历生日：\n\n'
-        for name in birthday_people:
-            body += f'- {name}\n'
-        body += '\n祝他们生日快乐！'
+        # 获取生日祝福语
+        body = get_birthday_greeting(module_name, birthday_people, lunar_date_str)
 
         msg.attach(MIMEText(body, 'plain', 'utf-8'))
 
@@ -62,7 +102,7 @@ def send_birthday_email(birthday_people: List[str], email_config: Dict[str, Any]
             try:
                 server.quit()
             except (socket.error, smtplib.SMTPServerDisconnected):
-                pass  # 忽略关闭连接时的错误
+                pass
 
 def check_birthdays_for_module(birthday_data: Dict[str, Any], email_config: Dict[str, Any], module_name: str):
     lunar_today = get_today_lunar_date()
