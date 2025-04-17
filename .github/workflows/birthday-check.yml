@@ -25,8 +25,18 @@ jobs:
         
     - name: Create config files from secrets
       run: |
-        echo "${{ secrets.EMAIL_CONFIG }}" > email.json
-        echo "${{ secrets.BIRTHDAY_DATA }}" > birthday.json
+        # 创建email.json
+        cat > email.json << 'EOL'
+        ${{ secrets.EMAIL_CONFIG }}
+        EOL
+        
+        # 创建birthday.json
+        cat > birthday.json << 'EOL'
+        ${{ secrets.BIRTHDAY_DATA }}
+        EOL
+        
+        # 验证JSON格式
+        python -c "import json; json.load(open('email.json')); json.load(open('birthday.json'))"
       
     - name: Run birthday check
       run: python check_birthdays.py 
