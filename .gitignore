@@ -1,6 +1,9 @@
 # 配置文件
-email.json
-birthday.json
+email_family.json
+email_friends.json
+birthdays_family.json
+birthdays_friends.json
+modules.json
 
 # Python
 __pycache__/

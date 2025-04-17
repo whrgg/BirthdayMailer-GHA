@@ -1,0 +1,12 @@
+{
+    "sender": {
+        "email": "你的QQ邮箱@qq.com",
+        "password": "你的QQ邮箱授权码",
+        "smtp_server": "smtp.qq.com",
+        "smtp_port": 465
+    },
+    "recipients": [
+        "家人1的邮箱@example.com",
+        "家人2的邮箱@example.com"
+    ]
+} 

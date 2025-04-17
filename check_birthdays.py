@@ -5,6 +5,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 from zhdate import ZhDate
+from typing import Dict, List, Any
 
 def get_today_lunar_date():
     # 获取今天的公历日期
@@ -20,21 +21,21 @@ def format_lunar_date(month, day):
     lunar_months = ["正", "二", "三", "四", "五", "六", "七", "八", "九", "十", "冬", "腊"]
     return f"农历{lunar_months[month-1]}月{day}日"
 
-def send_birthday_email(birthday_people, email_config):
+def send_birthday_email(birthday_people: List[str], email_config: Dict[str, Any], module_name: str):
     server = None
     try:
         # 创建邮件内容
         msg = MIMEMultipart()
         msg['From'] = email_config['sender']['email']
         msg['To'] = ', '.join(email_config['recipients'])
-        msg['Subject'] = f'农历生日提醒 - {datetime.now().strftime("%Y-%m-%d")}'
+        msg['Subject'] = f'{module_name}模块 - 农历生日提醒 - {datetime.now().strftime("%Y-%m-%d")}'
 
         # 获取今天的农历日期
         lunar_today = get_today_lunar_date()
         lunar_date_str = format_lunar_date(lunar_today['month'], lunar_today['day'])
 
         # 构建邮件正文
-        body = f'今天是{lunar_date_str}，以下人员过农历生日：\n\n'
+        body = f'今天是{lunar_date_str}，{module_name}模块中以下人员过农历生日：\n\n'
         for name in birthday_people:
             body += f'- {name}\n'
         body += '\n祝他们生日快乐！'
@@ -46,10 +47,10 @@ def send_birthday_email(birthday_people, email_config):
         server.login(email_config['sender']['email'], 
                     email_config['sender']['password'])
         server.send_message(msg)
-        print('生日提醒邮件已发送成功！')
+        print(f'{module_name}模块的生日提醒邮件已发送成功！')
         
     except Exception as e:
-        print(f'发送邮件时出错：{str(e)}')
+        print(f'发送{module_name}模块邮件时出错：{str(e)}')
         print('请确保：')
         print('1. QQ邮箱已开启SMTP服务')
         print('2. 使用的是正确的授权码而不是QQ密码')
@@ -63,47 +64,58 @@ def send_birthday_email(birthday_people, email_config):
             except (socket.error, smtplib.SMTPServerDisconnected):
                 pass  # 忽略关闭连接时的错误
 
-def check_birthdays():
+def check_birthdays_for_module(birthday_data: Dict[str, Any], email_config: Dict[str, Any], module_name: str):
+    lunar_today = get_today_lunar_date()
+    lunar_date_str = format_lunar_date(lunar_today['month'], lunar_today['day'])
+    
+    birthday_people = []
+    for person in birthday_data.get('birthdays', []):
+        lunar_date = person['lunar_date']
+        if lunar_date['month'] == lunar_today['month'] and lunar_date['day'] == lunar_today['day']:
+            birthday_people.append(person['name'])
+    
+    if birthday_people:
+        print(f'今天是{lunar_date_str}，{module_name}模块中以下人员过农历生日：')
+        for name in birthday_people:
+            print(f'- {name}')
+        
+        send_birthday_email(birthday_people, email_config, module_name)
+    else:
+        print(f'今天是{lunar_date_str}，{module_name}模块中没有人过农历生日。')
+
+def load_config(file_path: str) -> Dict[str, Any]:
     try:
-        # 读取birthday.json文件
-        with open('birthday.json', 'r', encoding='utf-8') as file:
-            data = json.load(file)
-        
-        # 读取email.json文件
-        with open('email.json', 'r', encoding='utf-8') as file:
-            email_config = json.load(file)
-        
-        # 获取今天的农历日期
-        lunar_today = get_today_lunar_date()
-        lunar_date_str = format_lunar_date(lunar_today['month'], lunar_today['day'])
-        
-        # 检查今天是否有人过生日
-        birthday_people = []
-        for person in data['birthdays']:
-            lunar_date = person['lunar_date']
-            if lunar_date['month'] == lunar_today['month'] and lunar_date['day'] == lunar_today['day']:
-                birthday_people.append(person['name'])
-        
-        # 输出结果
-        if birthday_people:
-            print(f'今天是{lunar_date_str}，以下人员过农历生日：')
-            for name in birthday_people:
-                print(f'- {name}')
-            
-            # 发送生日提醒邮件
-            send_birthday_email(birthday_people, email_config)
-        else:
-            print(f'今天是{lunar_date_str}，没有人过农历生日。')
-            
-    except FileNotFoundError as e:
-        if 'birthday.json' in str(e):
-            print('错误：找不到 birthday.json 文件')
-        elif 'email.json' in str(e):
-            print('错误：找不到 email.json 文件')
+        with open(file_path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        print(f'错误：找不到配置文件 {file_path}')
+        raise
     except json.JSONDecodeError as e:
-        print(f'错误：JSON 文件格式不正确 - {str(e)}')
+        print(f'错误：配置文件 {file_path} 格式不正确 - {str(e)}')
+        raise
+
+def main():
+    try:
+        # 加载模块配置
+        modules_config = load_config('modules.json')
+        
+        # 遍历每个模块
+        for module in modules_config['modules']:
+            module_name = module['name']
+            try:
+                # 加载模块的生日数据和邮箱配置
+                birthday_data = load_config(f'birthdays_{module_name}.json')
+                email_config = load_config(f'email_{module_name}.json')
+                
+                # 检查该模块的生日
+                check_birthdays_for_module(birthday_data, email_config, module_name)
+                
+            except Exception as e:
+                print(f'处理{module_name}模块时出错：{str(e)}')
+                continue
+            
     except Exception as e:
         print(f'发生错误：{str(e)}')
 
 if __name__ == '__main__':
-    check_birthdays() 
+    main() 

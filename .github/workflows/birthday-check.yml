@@ -2,7 +2,7 @@ name: Birthday Check
 
 on:
   schedule:
-    - cron: '*/5 * * * *'  # 每5分钟运行一次
+    - cron: '0 0 * * *'  # UTC 0:00 (北京时间 8:00)
   workflow_dispatch:      # 允许手动触发
 
 jobs:
@@ -23,40 +23,30 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         
-    - name: Create config files
-      env:
-        BIRTHDAY_DATA: ${{ secrets.BIRTHDAY_DATA }}
+    - name: Create module configs
       run: |
-        # 直接写入邮箱配置文件
-        cat << EOF > email.json
-        {
-            "sender": {
-                "email": "${{ secrets.SENDER_EMAIL }}",
-                "password": "${{ secrets.EMAIL_PASSWORD }}",
-                "smtp_server": "smtp.qq.com",
-                "smtp_port": 465
-            },
-            "recipients": [
-                "${{ secrets.RECIPIENT_EMAIL }}"
-            ]
-        }
-        EOF
+        # 创建模块配置文件
+        cat > modules.json << 'EOL'
+        ${{ secrets.MODULES_CONFIG }}
+        EOL
         
-        # 使用Python处理生日数据的反序列化
-        python3 << EOF
-        import json
-        import os
+        # 创建家庭模块配置
+        cat > email_family.json << 'EOL'
+        ${{ secrets.EMAIL_FAMILY_CONFIG }}
+        EOL
         
-        # 从环境变量获取JSON字符串
-        birthday_str = os.environ["BIRTHDAY_DATA"]
+        cat > birthdays_family.json << 'EOL'
+        ${{ secrets.BIRTHDAYS_FAMILY_DATA }}
+        EOL
         
-        # 解析JSON字符串
-        birthday_data = json.loads(birthday_str)
+        # 创建朋友模块配置
+        cat > email_friends.json << 'EOL'
+        ${{ secrets.EMAIL_FRIENDS_CONFIG }}
+        EOL
         
-        # 格式化并写入文件
-        with open("birthday.json", "w", encoding="utf-8") as f:
-            json.dump(birthday_data, f, ensure_ascii=False, indent=4)
-        EOF
+        cat > birthdays_friends.json << 'EOL'
+        ${{ secrets.BIRTHDAYS_FRIENDS_DATA }}
+        EOL
       
     - name: Run birthday check
       run: python check_birthdays.py 
