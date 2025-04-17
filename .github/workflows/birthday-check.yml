@@ -23,20 +23,26 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         
-    - name: Create config files from secrets
+    - name: Create config files
       run: |
-        # 创建email.json
-        cat > email.json << 'EOL'
-        ${{ secrets.EMAIL_CONFIG }}
-        EOL
-        
-        # 创建birthday.json
-        cat > birthday.json << 'EOL'
-        ${{ secrets.BIRTHDAY_DATA }}
-        EOL
-        
-        # 验证JSON格式
-        python -c "import json; json.load(open('email.json')); json.load(open('birthday.json'))"
+        node -e '
+          const fs = require("fs");
+          
+          // 写入 email.json
+          fs.writeFileSync(
+            "email.json",
+            JSON.stringify(JSON.parse(process.env.EMAIL_CONFIG), null, 2)
+          );
+          
+          // 写入 birthday.json
+          fs.writeFileSync(
+            "birthday.json",
+            JSON.stringify(JSON.parse(process.env.BIRTHDAY_DATA), null, 2)
+          );
+        '
+      env:
+        EMAIL_CONFIG: ${{ secrets.EMAIL_CONFIG }}
+        BIRTHDAY_DATA: ${{ secrets.BIRTHDAY_DATA }}
       
     - name: Run birthday check
       run: python check_birthdays.py 
