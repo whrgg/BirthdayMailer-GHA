@@ -25,24 +25,15 @@ jobs:
         
     - name: Create config files
       run: |
-        node -e '
-          const fs = require("fs");
-          
-          // 写入 email.json
-          fs.writeFileSync(
-            "email.json",
-            JSON.stringify(JSON.parse(process.env.EMAIL_CONFIG), null, 2)
-          );
-          
-          // 写入 birthday.json
-          fs.writeFileSync(
-            "birthday.json",
-            JSON.stringify(JSON.parse(process.env.BIRTHDAY_DATA), null, 2)
-          );
-        '
-      env:
-        EMAIL_CONFIG: ${{ secrets.EMAIL_CONFIG }}
-        BIRTHDAY_DATA: ${{ secrets.BIRTHDAY_DATA }}
+        # 使用 jq 验证并格式化 JSON
+        echo '${{ secrets.EMAIL_CONFIG }}' | jq '.' > email.json
+        echo '${{ secrets.BIRTHDAY_DATA }}' | jq '.' > birthday.json
+        
+        # 显示创建的文件内容（隐藏敏感信息）
+        echo "email.json structure:"
+        jq 'del(.sender.password)' email.json
+        echo "birthday.json structure:"
+        jq '.' birthday.json
       
     - name: Run birthday check
       run: python check_birthdays.py 
