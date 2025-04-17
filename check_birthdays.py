@@ -3,6 +3,7 @@ import smtplib
 import socket
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.utils import formataddr
 from datetime import datetime
 import pytz
 from zhdate import ZhDate
@@ -79,7 +80,8 @@ def send_birthday_email(birthday_people: List[str], email_config: Dict[str, Any]
     try:
         # 创建邮件内容
         msg = MIMEMultipart()
-        msg['From'] = email_config['sender']['email']
+        # 设置发件人名称和邮箱
+        msg['From'] = formataddr(('吴好人', email_config['sender']['email']))
         msg['To'] = ', '.join(email_config['recipients'])
         msg['Subject'] = get_email_subject(module_name)
 
