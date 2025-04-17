@@ -4,12 +4,20 @@ import socket
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
+import pytz
 from zhdate import ZhDate
 from typing import Dict, List, Any
 
+def get_beijing_now() -> datetime:
+    """
+    获取北京时间
+    """
+    beijing_tz = pytz.timezone('Asia/Shanghai')
+    return datetime.now(beijing_tz)
+
 def get_today_lunar_date():
-    # 获取今天的公历日期
-    today = datetime.now()
+    # 获取今天的北京时间
+    today = get_beijing_now()
     # 转换为农历日期
     lunar_date = ZhDate.from_datetime(today)
     return {
@@ -55,7 +63,7 @@ def get_email_subject(module_name: str) -> str:
     """
     根据不同模块生成不同的邮件主题
     """
-    today_str = datetime.now().strftime("%Y-%m-%d")
+    today_str = get_beijing_now().strftime("%Y-%m-%d")
     
     if module_name == "family":
         return f'家人生日提醒 - {today_str}'
