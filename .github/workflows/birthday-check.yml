@@ -24,8 +24,10 @@ jobs:
         pip install -r requirements.txt
         
     - name: Create config files
+      env:
+        BIRTHDAY_DATA: ${{ secrets.BIRTHDAY_DATA }}
       run: |
-        # 直接写入配置文件
+        # 直接写入邮箱配置文件
         cat << EOF > email.json
         {
             "sender": {
@@ -40,8 +42,21 @@ jobs:
         }
         EOF
         
-        # 写入生日数据
-        echo '${{ secrets.BIRTHDAY_DATA }}' > birthday.json
+        # 使用Python处理生日数据的反序列化
+        python3 << EOF
+        import json
+        import os
+        
+        # 从环境变量获取JSON字符串
+        birthday_str = os.environ["BIRTHDAY_DATA"]
+        
+        # 解析JSON字符串
+        birthday_data = json.loads(birthday_str)
+        
+        # 格式化并写入文件
+        with open("birthday.json", "w", encoding="utf-8") as f:
+            json.dump(birthday_data, f, ensure_ascii=False, indent=4)
+        EOF
       
     - name: Run birthday check
       run: python check_birthdays.py 
